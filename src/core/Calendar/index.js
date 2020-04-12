@@ -5,6 +5,7 @@ import "moment/locale/es";
 import "react-big-calendar/lib/css/react-big-calendar.css";
 // import "./styles.css";
 import { useState } from "react";
+import events from "./events";
 
 const messagesDefault = {
   date: "Date",
@@ -61,7 +62,7 @@ const Calendar = (props) => {
       <BigCalendar
         localizer={momentLocalizer(moment)}
         culture="es"
-        events={props.events || []}
+        events={events}
         startAccessor="start"
         endAccessor="end"
         date={date}
