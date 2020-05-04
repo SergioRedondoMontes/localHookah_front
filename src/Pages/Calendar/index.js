@@ -5,6 +5,8 @@ import events from "core/Calendar/events";
 import Dialog from "Organisms/Dialog";
 import { Grid, TextField } from "@material-ui/core";
 import { DatePicker } from "core/DatePicker";
+import { TimePicker } from "core/TimePicker";
+import { v1 } from "uuid";
 
 class CalendarPage extends Component {
   constructor(props) {
@@ -20,6 +22,7 @@ class CalendarPage extends Component {
         comments: "",
         zone: null,
       },
+      open: false,
     };
   }
 
@@ -54,6 +57,34 @@ class CalendarPage extends Component {
     this.setState({ form });
   };
 
+  handleSubmit = () => {
+    console.log("entro");
+    const events = this.state.events;
+    events.push({
+      id: v1(),
+      title: this.state.form.name,
+      start: this.state.form.start.toDate(),
+      end: this.state.form.end.toDate(),
+    });
+    this.setState(
+      {
+        events,
+        form: {
+          date: null,
+          start: null,
+          end: null,
+          numPeople: 0,
+          name: "",
+          comments: "",
+          zone: null,
+        },
+      },
+      () => {
+        this.handleDialog();
+      }
+    );
+  };
+
   render() {
     console.log(this.state);
     return (
@@ -65,8 +96,8 @@ class CalendarPage extends Component {
           onSubmit={this.handleSubmit}
           title="Añadir reserva"
         >
-          <Grid container>
-            <Grid item xs={12} md={6}>
+          <Grid container spacing={2}>
+            <Grid item xs={12}>
               <DatePicker
                 date={this.state.form.date}
                 variant="dialog"
@@ -78,6 +109,33 @@ class CalendarPage extends Component {
                 okLabel="Aceptar"
                 cancelLabel="Cancelar"
                 invalidDateMessage="Fecha incorrecta"
+                margin="normal"
+              />
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <TimePicker
+                clearable
+                ampm={false}
+                label="Inicio"
+                date={this.state.form.start}
+                onChangeDate={(date) => {
+                  this.handleChangeDate(date, "start");
+                }}
+                margin="normal"
+                style={{ width: "100%" }}
+              />
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <TimePicker
+                clearable
+                ampm={false}
+                label="Fin"
+                date={this.state.form.end}
+                onChangeDate={(date) => {
+                  this.handleChangeDate(date, "end");
+                }}
+                margin="normal"
+                style={{ width: "100%" }}
               />
             </Grid>
             <Grid item xs={12}>
@@ -97,6 +155,7 @@ class CalendarPage extends Component {
                 variant="outlined"
                 label="Nº Personas"
                 name="numPeople"
+                type="number"
                 value={this.state.form.numPeople}
                 placeholder="Indica el numero de personas"
                 onChange={this.handleChangeInput}
