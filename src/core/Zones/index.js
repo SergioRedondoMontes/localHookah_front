@@ -1,10 +1,10 @@
 export default [
   {
-    value: "terraza",
-    label: "Terraza",
+    value: 1,
+    label: "Interior",
   },
   {
-    value: "interior",
-    label: "Interior",
+    value: 2,
+    label: "Exterior",
   },
 ];

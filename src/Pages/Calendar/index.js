@@ -1,12 +1,21 @@
 import React, { Component } from "react";
 import { Calendar } from "core/Calendar";
+import Select from "@material-ui/core/Select";
 import moment from "moment";
 import events from "core/Calendar/events";
 import Dialog from "Organisms/Dialog";
-import { Grid, TextField } from "@material-ui/core";
+import {
+  Grid,
+  TextField,
+  MenuItem,
+  FormControl,
+  InputLabel,
+} from "@material-ui/core";
 import { DatePicker } from "core/DatePicker";
 import { TimePicker } from "core/TimePicker";
 import { v1 } from "uuid";
+import BookingServices from "services/booking.services";
+import zones from "core/Zones";
 
 class CalendarPage extends Component {
   constructor(props) {
@@ -24,6 +33,21 @@ class CalendarPage extends Component {
       },
       open: false,
     };
+    this.bookingService = new BookingServices();
+  }
+
+  componentDidMount() {
+    this.bookingService.getBooking().then((response) => {
+      const events = response.data.bookings.map((event) => ({
+        id: event.id,
+        idZone: event.idZone,
+        title: event.title || "",
+        comments: event.comments,
+        start: moment(event.date).add(-2, "h").toDate(),
+        end: moment(event.date).toDate(),
+      }));
+      this.setState({ events });
+    });
   }
 
   handleDialog = () => {
@@ -60,29 +84,41 @@ class CalendarPage extends Component {
   handleSubmit = () => {
     console.log("entro");
     const events = this.state.events;
-    events.push({
-      id: v1(),
-      title: this.state.form.name,
-      start: this.state.form.start.toDate(),
-      end: this.state.form.end.toDate(),
-    });
-    this.setState(
-      {
-        events,
-        form: {
-          date: null,
-          start: null,
-          end: null,
-          numPeople: 0,
-          name: "",
-          comments: "",
-          zone: null,
-        },
-      },
-      () => {
-        this.handleDialog();
-      }
-    );
+
+    this.bookingService
+      .postBooking({
+        zone: this.state.form.zone + "",
+        title: this.state.form.name,
+        people: this.state.form.numPeople,
+        comments: this.state.form.comments,
+        date: moment(this.state.form.date)
+          .add(2, "h")
+          .format("YYYY-MM-DD HH:mm"),
+      })
+      .then((response) => {
+        events.push({
+          id: response.data.id,
+          title: this.state.form.name,
+          start: this.state.form.start.toDate(),
+          end: this.state.form.start.add(2, "h").toDate(),
+        });
+        this.setState(
+          {
+            form: {
+              date: null,
+              start: null,
+              end: null,
+              numPeople: 0,
+              name: "",
+              comments: "",
+              zone: null,
+            },
+          },
+          () => {
+            this.handleDialog();
+          }
+        );
+      });
   };
 
   render() {
@@ -125,18 +161,32 @@ class CalendarPage extends Component {
                 style={{ width: "100%" }}
               />
             </Grid>
-            <Grid item xs={12} sm={6}>
-              <TimePicker
-                clearable
-                ampm={false}
-                label="Fin"
-                date={this.state.form.end}
-                onChangeDate={(date) => {
-                  this.handleChangeDate(date, "end");
-                }}
-                margin="normal"
-                style={{ width: "100%" }}
-              />
+            <Grid
+              item
+              xs={12}
+              sm={6}
+              style={{ display: "flex", alignItems: "center" }}
+            >
+              <FormControl style={{ width: "100%" }}>
+                <InputLabel
+                  id="demo-simple-select-label"
+                  style={{ paddingLeft: "8px" }}
+                >
+                  Zona
+                </InputLabel>
+                <Select
+                  name="zone"
+                  value={this.state.form.zone}
+                  onChange={this.handleChangeInput}
+                  fullWidth
+                  variant="outlined"
+                  margin="none"
+                >
+                  {zones.map((zone) => (
+                    <MenuItem value={zone.value}>{zone.label}</MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
             </Grid>
             <Grid item xs={12}>
               <TextField
