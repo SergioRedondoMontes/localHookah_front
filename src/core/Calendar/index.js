@@ -35,7 +35,7 @@ const Calendar = (props) => {
   }, [props.date]);
 
   return (
-    <div style={{ height: "100vh" }}>
+    <div style={{ height: "90vh" }}>
       <BigCalendar
         localizer={momentLocalizer(moment)}
         culture="es"

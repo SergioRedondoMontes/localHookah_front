@@ -16,6 +16,8 @@ import { TimePicker } from "core/TimePicker";
 import { v1 } from "uuid";
 import BookingServices from "services/booking.services";
 import zones from "core/Zones";
+import { Redirect } from "react-router-dom";
+import { AppBar } from "Organisms/AppBar";
 
 class CalendarPage extends Component {
   constructor(props) {
@@ -125,6 +127,8 @@ class CalendarPage extends Component {
     console.log(this.state);
     return (
       <div>
+        <AppBar />
+        {!localStorage.getItem("hookah-jwt") && <Redirect to="/" />}
         {/* Dialog añadir reservas */}
         <Dialog
           open={this.state.open}
