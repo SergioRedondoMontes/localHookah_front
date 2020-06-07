@@ -10,6 +10,8 @@ import {
   MenuItem,
   FormControl,
   InputLabel,
+  Typography,
+  Button,
 } from "@material-ui/core";
 import { DatePicker } from "core/DatePicker";
 import { TimePicker } from "core/TimePicker";
@@ -33,7 +35,9 @@ class CalendarPage extends Component {
         comments: "",
         zone: null,
       },
-      open: false,
+      eventSelected: null,
+      openEdit: false,
+      openView: false,
     };
     this.bookingService = new BookingServices();
   }
@@ -52,8 +56,12 @@ class CalendarPage extends Component {
     });
   }
 
-  handleDialog = () => {
-    this.setState({ open: !this.state.open });
+  handleEditDialog = () => {
+    this.setState({ openEdit: !this.state.openEdit });
+  };
+
+  handleViewDialog = () => {
+    this.setState({ openView: !this.state.openView });
   };
 
   handleSelect = ({ start, end }) => {
@@ -66,7 +74,7 @@ class CalendarPage extends Component {
         form: { date: auxDate, start: auxStart, end: auxEnd },
       },
       () => {
-        this.handleDialog();
+        this.handleEditDialog();
       }
     );
   };
@@ -117,7 +125,7 @@ class CalendarPage extends Component {
             },
           },
           () => {
-            this.handleDialog();
+            this.handleEditDialog();
           }
         );
       });
@@ -131,8 +139,8 @@ class CalendarPage extends Component {
         {!localStorage.getItem("hookah-jwt") && <Redirect to="/" />}
         {/* Dialog añadir reservas */}
         <Dialog
-          open={this.state.open}
-          onClose={this.handleDialog}
+          open={this.state.openEdit}
+          onClose={this.handleEditDialog}
           onSubmit={this.handleSubmit}
           title="Añadir reserva"
         >
@@ -233,10 +241,67 @@ class CalendarPage extends Component {
             </Grid>
           </Grid>
         </Dialog>
+        {/* Dialog ver reserva */}
+        <Dialog
+          fullWidth
+          maxWidth="md"
+          open={this.state.openView}
+          onClose={this.handleViewDialog}
+          title="Ver reserva"
+          dialogActions={
+            <>
+              <Button variant="contained" onClick={() => {}}>
+                Editar
+              </Button>
+              <Button variant="contained" onClick={() => {}}>
+                Borrar
+              </Button>
+            </>
+          }
+        >
+          <Grid container spacing={2}>
+            <Grid item xs={12}>
+              <Typography variant="body1">Nombre reserva</Typography>
+              <Typography variant="body2">
+                {this.state.eventSelected ? this.state.eventSelected.title : ""}
+              </Typography>
+              <Typography variant="body1">Hora entrada reserva</Typography>
+              <Typography variant="body2">
+                {moment(
+                  this.state.eventSelected ? this.state.eventSelected.date : ""
+                )
+                  .add(-2, "h")
+                  .format("HH:mm")}
+              </Typography>
+              <Typography variant="body1">Hora salida reserva</Typography>
+              <Typography variant="body2">
+                {this.state.eventSelected
+                  ? moment(this.state.eventSelected.date).format("HH:mm")
+                  : ""}
+              </Typography>
+              <Typography variant="body1">Número de personas</Typography>
+              <Typography variant="body2">
+                {this.state.eventSelected
+                  ? this.state.eventSelected.people
+                  : ""}
+              </Typography>
+              <Typography variant="body1">Comentarios</Typography>
+              <Typography variant="body2">
+                {this.state.eventSelected
+                  ? this.state.eventSelected.comments
+                  : ""}
+              </Typography>
+            </Grid>
+          </Grid>
+        </Dialog>
         <Calendar
           date={moment()}
           selectable
-          onSelectEvent={(event) => console.log("entro", event)}
+          onSelectEvent={(event) => {
+            this.setState({ eventSelected: event }, () =>
+              this.handleViewDialog()
+            );
+          }}
           onSelectSlot={this.handleSelect}
           events={this.state.events}
         />

@@ -16,12 +16,17 @@ export default function Dialog(props) {
       <DialogTitle>{props.title}</DialogTitle>
       <DialogContent>{props.children}</DialogContent>
       <DialogActions>
-        <Button onClick={props.onSubmit} color="primary">
-          Guardar
-        </Button>
-        <Button onClick={props.onClose} color="primary">
-          Cancelar
-        </Button>
+        {props.dialogActions || (
+          <>
+            {" "}
+            <Button onClick={props.onSubmit} color="primary">
+              Guardar
+            </Button>
+            <Button onClick={props.onClose} color="primary">
+              Cancelar
+            </Button>
+          </>
+        )}
       </DialogActions>
     </DialogMui>
   );
