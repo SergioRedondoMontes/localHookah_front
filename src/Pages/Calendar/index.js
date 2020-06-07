@@ -38,6 +38,7 @@ class CalendarPage extends Component {
       eventSelected: null,
       openEdit: false,
       openView: false,
+      typeDialog: "",
     };
     this.bookingService = new BookingServices();
   }
@@ -49,6 +50,7 @@ class CalendarPage extends Component {
         idZone: event.idZone,
         title: event.title || "",
         comments: event.comments,
+        people: event.people,
         start: moment(event.date).add(-2, "h").toDate(),
         end: moment(event.date).toDate(),
       }));
@@ -56,8 +58,8 @@ class CalendarPage extends Component {
     });
   }
 
-  handleEditDialog = () => {
-    this.setState({ openEdit: !this.state.openEdit });
+  handleEditDialog = (type) => {
+    this.setState({ openEdit: !this.state.openEdit, typeDialog: type });
   };
 
   handleViewDialog = () => {
@@ -74,7 +76,7 @@ class CalendarPage extends Component {
         form: { date: auxDate, start: auxStart, end: auxEnd },
       },
       () => {
-        this.handleEditDialog();
+        this.handleEditDialog("add");
       }
     );
   };
@@ -91,44 +93,110 @@ class CalendarPage extends Component {
     this.setState({ form });
   };
 
+  handleDeleteBooking = () => {
+    this.bookingService
+      .deleteBooking(this.state.eventSelected.id)
+      .then((response) => {
+        const events = this.state.events.filter(
+          (event) => event.id != this.state.eventSelected.id
+        );
+        this.setState({ events, openView: false });
+      });
+  };
+
   handleSubmit = () => {
     console.log("entro");
-    const events = this.state.events;
+    let events = this.state.events;
 
-    this.bookingService
-      .postBooking({
-        zone: this.state.form.zone + "",
-        title: this.state.form.name,
-        people: this.state.form.numPeople,
-        comments: this.state.form.comments,
-        date: moment(this.state.form.date)
-          .add(2, "h")
-          .format("YYYY-MM-DD HH:mm"),
-      })
-      .then((response) => {
-        events.push({
-          id: response.data.id,
-          title: this.state.form.name,
-          start: this.state.form.start.toDate(),
-          end: this.state.form.start.add(2, "h").toDate(),
-        });
-        this.setState(
-          {
-            form: {
-              date: null,
-              start: null,
-              end: null,
-              numPeople: 0,
-              name: "",
-              comments: "",
-              zone: null,
-            },
-          },
-          () => {
-            this.handleEditDialog();
-          }
-        );
-      });
+    switch (this.state.typeDialog) {
+      case "add":
+        this.bookingService
+          .postBooking({
+            zone: this.state.form.zone + "",
+            title: this.state.form.name,
+            people: this.state.form.numPeople,
+            comments: this.state.form.comments,
+            date: moment(this.state.form.date).format("YYYY-MM-DD HH:mm"),
+          })
+          .then((response) => {
+            events.push({
+              id: response.data.id,
+              title: this.state.form.name,
+              start: this.state.form.start.toDate(),
+              end: this.state.form.start.add(2, "h").toDate(),
+            });
+            this.setState(
+              {
+                form: {
+                  date: null,
+                  start: null,
+                  end: null,
+                  numPeople: 0,
+                  name: "",
+                  comments: "",
+                  zone: null,
+                },
+              },
+              () => {
+                this.handleEditDialog("");
+              }
+            );
+          });
+
+        break;
+      case "edit":
+        console.log("editooo");
+
+        this.bookingService
+          .putBooking(this.state.eventSelected.id, {
+            zone: this.state.form.zone + "",
+            title: this.state.form.name,
+            people: this.state.form.numPeople + "",
+            comments: this.state.form.comments,
+            date: moment(this.state.form.start).format("YYYY-MM-DD HH:mm"),
+          })
+          .then((response) => {
+            events = events.map((event) => {
+              if (event.id === this.state.eventSelected.id) {
+                return {
+                  ...event,
+                  zone: this.state.form.zone + "",
+                  title: this.state.form.name,
+                  people: this.state.form.numPeople,
+                  comments: this.state.form.comments,
+                  date: moment(this.state.form.start).format(
+                    "YYYY-MM-DD HH:mm"
+                  ),
+                  start: this.state.form.start.toDate(),
+                  end: this.state.form.start.add(2, "h").toDate(),
+                };
+              } else {
+                return event;
+              }
+            });
+            this.setState(
+              {
+                form: {
+                  date: null,
+                  start: null,
+                  end: null,
+                  numPeople: 0,
+                  name: "",
+                  comments: "",
+                  zone: null,
+                },
+                events,
+              },
+              () => {
+                this.handleEditDialog("");
+              }
+            );
+          })
+          .catch((err) => console.log("errror"));
+        break;
+      default:
+        break;
+    }
   };
 
   render() {
@@ -142,7 +210,11 @@ class CalendarPage extends Component {
           open={this.state.openEdit}
           onClose={this.handleEditDialog}
           onSubmit={this.handleSubmit}
-          title="Añadir reserva"
+          title={
+            this.state.typeDialog === "edit"
+              ? "Editar reserva"
+              : "Añadir reserva"
+          }
         >
           <Grid container spacing={2}>
             <Grid item xs={12}>
@@ -250,10 +322,45 @@ class CalendarPage extends Component {
           title="Ver reserva"
           dialogActions={
             <>
-              <Button variant="contained" onClick={() => {}}>
+              <Button
+                variant="contained"
+                onClick={() => {
+                  this.setState(
+                    {
+                      form: {
+                        date: this.state.eventSelected
+                          ? moment(this.state.eventSelected.start).toDate()
+                          : null,
+                        start: this.state.eventSelected
+                          ? moment(this.state.eventSelected.start).toDate()
+                          : null,
+                        numPeople: this.state.eventSelected
+                          ? this.state.eventSelected.people
+                          : null,
+                        name: this.state.eventSelected
+                          ? this.state.eventSelected.title
+                          : null,
+                        comments: this.state.eventSelected
+                          ? this.state.eventSelected.comments
+                          : null,
+                        zone: this.state.eventSelected
+                          ? this.state.eventSelected.idZone
+                          : null,
+                      },
+                      openView: false,
+                    },
+                    () => this.handleEditDialog("edit")
+                  );
+                }}
+              >
                 Editar
               </Button>
-              <Button variant="contained" onClick={() => {}}>
+              <Button
+                variant="contained"
+                onClick={() => {
+                  this.handleDeleteBooking();
+                }}
+              >
                 Borrar
               </Button>
             </>
@@ -268,15 +375,15 @@ class CalendarPage extends Component {
               <Typography variant="body1">Hora entrada reserva</Typography>
               <Typography variant="body2">
                 {moment(
-                  this.state.eventSelected ? this.state.eventSelected.date : ""
-                )
-                  .add(-2, "h")
-                  .format("HH:mm")}
+                  this.state.eventSelected ? this.state.eventSelected.start : ""
+                ).format("HH:mm")}
               </Typography>
               <Typography variant="body1">Hora salida reserva</Typography>
               <Typography variant="body2">
                 {this.state.eventSelected
-                  ? moment(this.state.eventSelected.date).format("HH:mm")
+                  ? moment(this.state.eventSelected.start)
+                      .add(2, "h")
+                      .format("HH:mm")
                   : ""}
               </Typography>
               <Typography variant="body1">Número de personas</Typography>

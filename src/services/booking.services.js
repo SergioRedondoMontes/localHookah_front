@@ -11,6 +11,8 @@ class BookingServices {
   postBooking = (data) => this.service.post("/booking", data);
 
   putBooking = (id, data) => this.service.put(`/booking/${id}`, data);
+
+  deleteBooking = (id) => this.service.delete(`/booking/${id}`);
 }
 
 export default BookingServices;
